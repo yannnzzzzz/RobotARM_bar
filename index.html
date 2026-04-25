@@ -312,13 +312,13 @@
       max-height: 660px;
       object-fit: contain;
       filter: drop-shadow(0 40px 42px rgba(0, 0, 0, .58));
-      transform: translateY(2px);
+      transform: translateY(2px) scale(var(--feature-scale, 1));
       transition: opacity .22s ease, transform .22s ease, filter .22s ease;
     }
 
     .featured-drink.swap {
       opacity: .25;
-      transform: translateY(12px) scale(.98);
+      transform: translateY(12px) scale(calc(var(--feature-scale, 1) * .98));
       filter: drop-shadow(0 40px 42px rgba(0, 0, 0, .58));
     }
 
@@ -509,20 +509,20 @@
     }
 
     .log {
-      max-height: 144px;
-      min-height: 84px;
+      max-height: 168px;
+      min-height: 96px;
       display: grid;
       align-content: start;
-      gap: 9px;
+      gap: 11px;
       overflow: auto;
-      color: rgba(247, 239, 225, .68);
-      font-size: 13px;
-      line-height: 1.45;
+      color: rgba(247, 239, 225, .78);
+      font-size: 14.5px;
+      line-height: 1.6;
       scrollbar-color: rgba(200, 156, 91, .42) transparent;
     }
 
     .log-line {
-      padding-left: 10px;
+      padding-left: 12px;
       border-left: 1px solid rgba(200, 156, 91, .58);
     }
 
@@ -614,6 +614,7 @@
       width: 126px;
       height: 126px;
       object-fit: contain;
+      transform: scale(var(--menu-scale, 1));
       filter: drop-shadow(0 16px 18px rgba(0, 0, 0, .4));
     }
 
@@ -823,7 +824,7 @@
         <div class="drawer-head">
           <div>
             <p class="drawer-kicker">Live Control</p>
-            <h2 class="drawer-title">调制控制</h2>
+            <h2 class="drawer-title">Momo Bartender</h2>
           </div>
           <button class="run-button" id="runButton" disabled>开始调制</button>
         </div>
@@ -849,11 +850,6 @@
         </div>
 
         <section class="drawer-section">
-          <h2 class="section-title">Fixed Points</h2>
-          <div class="point-map" id="pointMap"></div>
-        </section>
-
-        <section class="drawer-section">
           <h2 class="section-title">Command Log</h2>
           <div class="log" id="log">
             <div class="log-line">等待用户选择酒品。</div>
@@ -865,7 +861,7 @@
     <section class="menu-panel" aria-label="酒品选择">
       <div>
         <p class="menu-kicker">Tonight's menu</p>
-        <h2 class="menu-title">四款特调</h2>
+        <h2 class="menu-title">五款特调</h2>
       </div>
       <div class="drink-menu" id="drinkGrid"></div>
     </section>
@@ -884,6 +880,22 @@
 
     const drinks = [
       {
+        id: 5,
+        displayNo: "00",
+        name: "MomoTender",
+        english: "Mysterious Pour",
+        profile: "Mood · AI · Fixed Points",
+        recipe: ["点击这张卡片，让 MomoTender 根据最新情绪生成随机配方"],
+        sequence: [],
+        auxiliary: ["AI 即时推荐", "失败自动回退固定策略"],
+        image: "pic/mysterious.png",
+        accent: "#a98f63",
+        featureScale: 1.0,
+        menuScale: 0.98,
+        dynamic: true,
+        source: "pending"
+      },
+      {
         id: 1,
         name: "椰林飘香",
         english: "Luau Coconut",
@@ -892,7 +904,9 @@
         sequence: ["01", "02", "03"],
         auxiliary: ["冰块"],
         image: "pic/coconut.png",
-        accent: "#d7b46a"
+        accent: "#d7b46a",
+        featureScale: 1.18,
+        menuScale: 1.14
       },
       {
         id: 2,
@@ -932,7 +946,6 @@
     const atelier = document.querySelector("#atelier");
     const controlToggle = document.querySelector("#controlToggle");
     const drinkGrid = document.querySelector("#drinkGrid");
-    const pointMap = document.querySelector("#pointMap");
     const selectedDrink = document.querySelector("#selectedDrink");
     const selectedSequence = document.querySelector("#selectedSequence");
     const armState = document.querySelector("#armState");
@@ -951,23 +964,40 @@
     let activeDrink = null;
     let isRunning = false;
     let statusTimer = null;
+    let momotenderRequest = null;
+
+    function displayNumber(drink) {
+      return drink.displayNo || String(drink.id).padStart(2, "0");
+    }
 
     function recipePreview(drink) {
+      if (!drink.recipe || drink.recipe.length === 0) {
+        return "等待 MomoTender 生成配方";
+      }
       return drink.recipe.slice(0, 3).join(" · ");
     }
 
     function sequenceText(drink) {
+      if (!drink.sequence || drink.sequence.length === 0) {
+        return "等待 MomoTender 生成点位顺序";
+      }
       return drink.sequence.map((point) => `${point} ${ingredientPoints[point]}`).join(" -> ");
+    }
+
+    function updateDrinkActiveState() {
+      document.querySelectorAll(".drink-button").forEach((button) => {
+        button.classList.toggle("is-active", activeDrink && Number(button.dataset.id) === activeDrink.id);
+      });
     }
 
     function renderDrinks() {
       drinkGrid.innerHTML = drinks.map((drink) => `
-        <button class="drink-button" style="--accent: ${drink.accent};" data-id="${drink.id}" type="button">
+        <button class="drink-button" style="--accent: ${drink.accent}; --menu-scale: ${drink.menuScale || 1};" data-id="${drink.id}" type="button">
           <span class="menu-image-wrap">
             <img class="menu-image" src="${drink.image}" alt="${drink.name}">
           </span>
           <span>
-            <span class="drink-no">${String(drink.id).padStart(2, "0")}</span>
+            <span class="drink-no">${displayNumber(drink)}</span>
             <span class="drink-name">${drink.name}</span>
             <span class="recipe">${recipePreview(drink)}</span>
             <span class="sequence">
@@ -976,22 +1006,15 @@
           </span>
         </button>
       `).join("");
-    }
-
-    function renderPointMap() {
-      pointMap.innerHTML = Object.entries(ingredientPoints).map(([point, name]) => `
-        <div class="map-item">
-          <div class="point">${point}</div>
-          <div class="ingredient">${name}</div>
-        </div>
-      `).join("");
+      updateDrinkActiveState();
     }
 
     function setFeaturedDrink(drink) {
-      featureNumber.textContent = String(drink.id).padStart(2, "0");
+      featureNumber.textContent = displayNumber(drink);
       featureName.textContent = drink.name;
       featureSub.textContent = drink.profile;
       drinkCaption.textContent = drink.english;
+      featuredImage.style.setProperty("--feature-scale", drink.featureScale || 1);
       featuredImage.classList.add("swap");
       window.setTimeout(() => {
         featuredImage.src = drink.image;
@@ -1009,12 +1032,69 @@
       log.innerHTML = lines.map((line) => `<div class="log-line">${line}</div>`).join("");
     }
 
-    function selectDrink(drink) {
-      if (isRunning) return;
-      activeDrink = drink;
-      document.querySelectorAll(".drink-button").forEach((button) => {
-        button.classList.toggle("is-active", Number(button.dataset.id) === drink.id);
+    function applyMomotenderRecommendation(result) {
+      const recommendation = result.recommendation;
+      const momotenderDrink = drinks.find((item) => item.id === 5);
+      Object.assign(momotenderDrink, recommendation, {
+        dynamic: true,
+        source: result.source,
+        model: result.model,
+        emotion: result.emotion
       });
+      renderDrinks();
+      return momotenderDrink;
+    }
+
+    async function fetchMomotenderRecommendation(force = false) {
+      if (momotenderRequest && !force) {
+        return momotenderRequest;
+      }
+
+      momotenderRequest = (async () => {
+        const response = await fetch(`${API_BASE}/api/momotender/recommend`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ force })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.ok) {
+          throw new Error(result.error || "MomoTender 推荐失败");
+        }
+        return applyMomotenderRecommendation(result);
+      })();
+
+      try {
+        return await momotenderRequest;
+      } finally {
+        momotenderRequest = null;
+      }
+    }
+
+    async function selectDrink(drink, { refreshDynamic = false } = {}) {
+      if (isRunning) return;
+
+      if (drink.dynamic) {
+        runButton.disabled = true;
+        setState("MomoTender 调制灵感中", "running");
+        writeLog([
+          refreshDynamic ? "MomoTender 正在刷新一杯新的随机配方。" : "MomoTender 正在根据最新情绪生成配方。",
+          "如果接口超时或返回不稳定，将自动回退固定策略。"
+        ]);
+
+        try {
+          drink = await fetchMomotenderRecommendation(refreshDynamic || !drink.sequence || drink.sequence.length === 0);
+        } catch (error) {
+          setState("MomoTender 暂时离线", "running");
+          writeLog([
+            `MomoTender 推荐失败：${error.message}`,
+            "你仍然可以继续选择固定酒单。"
+          ]);
+          return;
+        }
+      }
+
+      activeDrink = drink;
+      updateDrinkActiveState();
 
       const selectedText = sequenceText(drink);
       setFeaturedDrink(drink);
@@ -1022,12 +1102,22 @@
       selectedSequence.textContent = selectedText;
       progressFill.style.width = "0%";
       setState("待机");
-      runButton.disabled = false;
-      writeLog([
+      runButton.disabled = !drink.sequence || drink.sequence.length === 0;
+      const lines = [
         `已选择 ${drink.id}号 ${drink.name}。`,
         `待执行点位：${selectedText}。`,
         `辅助项：${drink.auxiliary.join("、")}。`
-      ]);
+      ];
+      if (drink.dynamic && drink.reason) {
+        lines.splice(1, 0, `MomoTender：${drink.reason}`);
+      }
+      if (drink.dynamic && drink.emotion) {
+        lines.push(`情绪输入：${drink.emotion.label}（${Number(drink.emotion.confidence || 0).toFixed(2)}）。`);
+      }
+      if (drink.dynamic) {
+        lines.push(`推荐来源：${drink.source === "llm" ? (drink.model || "LLM") : "Fallback 固定策略"}。`);
+      }
+      writeLog(lines);
 
       dispatchRobotCommand("QUEUE_READY", drink);
     }
@@ -1115,14 +1205,14 @@
     }
 
     renderDrinks();
-    renderPointMap();
-    selectDrink(drinks[0]);
+    void selectDrink(drinks.find((drink) => drink.id === 1) || drinks[0]);
 
-    drinkGrid.addEventListener("click", (event) => {
+    drinkGrid.addEventListener("click", async (event) => {
       const button = event.target.closest(".drink-button");
       if (!button) return;
       const drink = drinks.find((item) => item.id === Number(button.dataset.id));
-      selectDrink(drink);
+      const refreshDynamic = Boolean(drink.dynamic && activeDrink && activeDrink.id === drink.id);
+      await selectDrink(drink, { refreshDynamic });
     });
 
     runButton.addEventListener("click", runSequence);

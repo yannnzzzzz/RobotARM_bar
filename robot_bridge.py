@@ -14,6 +14,10 @@ import traceback
 
 ROOT = Path(__file__).resolve().parent
 CONFIG_PATH = ROOT / "robot_points.json"
+AI_ROOT = ROOT.parent / "ai"
+
+if str(AI_ROOT) not in sys.path:
+    sys.path.insert(0, str(AI_ROOT))
 
 DRINKS = {
     1: {"name": "椰林飘香", "sequence": ["01", "02", "03"]},
@@ -83,13 +87,14 @@ class PantheraRunner:
         self.robot.motor_send_cmd()
         update_status(connected=True, message="机械臂 SDK 初始化完成")
 
-    def run_drink(self, drink_id, sequence=None):
+    def run_drink(self, drink_id, sequence=None, drink_name=None):
         drink_id = int(drink_id)
-        if drink_id not in DRINKS:
+        if drink_id not in DRINKS and not sequence:
             raise ValueError(f"未知酒品编号: {drink_id}")
 
-        drink = DRINKS[drink_id]
+        drink = DRINKS.get(drink_id, {"name": drink_name or "MomoTender"})
         sequence = sequence or drink["sequence"]
+        resolved_name = drink_name or drink["name"]
         self._validate_sequence(sequence)
 
         if not RUN_LOCK.acquire(blocking=False):
@@ -99,10 +104,10 @@ class PantheraRunner:
             update_status(
                 busy=True,
                 state="running",
-                activeDrink={"id": drink_id, "name": drink["name"], "sequence": sequence},
+                activeDrink={"id": drink_id, "name": resolved_name, "sequence": sequence},
                 currentPoint=None,
                 progress=0,
-                message=f"开始执行 {drink_id}号 {drink['name']}",
+                message=f"开始执行 {drink_id}号 {resolved_name}",
             )
             self.connect()
             self._move_home()
@@ -117,7 +122,7 @@ class PantheraRunner:
                 state="done",
                 currentPoint=None,
                 progress=100,
-                message=f"{drink['name']} 调制完成，机械臂已复位",
+                message=f"{resolved_name} 调制完成，机械臂已复位",
             )
         except Exception as exc:
             update_status(
@@ -247,13 +252,19 @@ class Handler(SimpleHTTPRequestHandler):
             if path == "/api/run":
                 drink_id = body.get("cocktailId")
                 sequence = body.get("sequence")
+                drink_name = body.get("cocktailName")
                 thread = threading.Thread(
                     target=RUNNER.run_drink,
-                    args=(drink_id, sequence),
+                    args=(drink_id, sequence, drink_name),
                     daemon=True,
                 )
                 thread.start()
                 self._send_json({"ok": True, "message": "任务已接收"})
+                return
+            if path == "/api/momotender/recommend":
+                from momotender_service import recommend_for_web
+
+                self._send_json(recommend_for_web())
                 return
             if path == "/api/connect":
                 RUNNER.connect()
