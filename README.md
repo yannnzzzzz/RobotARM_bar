@@ -86,7 +86,24 @@ POST /api/run
 服务按酒品原料编号顺序执行：
 
 ```text
-home -> 点位approach -> 点位pick -> 夹取 -> mix -> 等待 -> 返回pick -> 松开 -> home
+home -> 播放该点位 to_mix -> return 轨迹 -> home
 ```
 
 `dry_run: true` 时只模拟状态和日志，不调用 Panthera SDK。
+
+## 轨迹文件
+
+每个原料点位现在按 2 段完整轨迹回放，不再依赖点到点 `moveJ` 完成取放：
+
+```text
+trajectories/01/whole_from_origin_to_1_to_mix.jsonl
+trajectories/01/whole_from_mix_to_1_to_origin_reversed.jsonl
+```
+
+`01-07` 每个点位都需要同样的 2 个文件。录制完成后，把文件放到对应目录，或在 `robot_points.json` 的 `points.<编号>.trajectories` 中改成实际路径。
+
+回放顺序由 `robot_points.json` 的 `trajectory_playback.segment_order` 控制，默认是：
+
+```json
+["to_mix", "return"]
+```

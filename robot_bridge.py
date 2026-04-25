@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local HTTP bridge between the self-service bar UI and Panthera-HT SDK."""
+"""Local HTTP bridge between the bar UI and Panthera-HT SDK."""
 
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -34,6 +34,7 @@ STATUS = {
     "message": "服务已启动，等待指令",
     "activeDrink": None,
     "currentPoint": None,
+    "currentSegment": None,
     "progress": 0,
     "logs": [],
 }
@@ -44,6 +45,11 @@ RUN_LOCK = threading.Lock()
 def load_config():
     with CONFIG_PATH.open("r", encoding="utf-8") as file:
         return json.load(file)
+
+
+def save_config(config):
+    with CONFIG_PATH.open("w", encoding="utf-8") as file:
+        json.dump(config, file, indent=2, ensure_ascii=False)
 
 
 def update_status(**changes):
@@ -63,6 +69,7 @@ class PantheraRunner:
     def __init__(self, config):
         self.config = config
         self.robot = None
+        self.TrajectoryRecorder = None
         self.dry_run = bool(config.get("dry_run", True))
         update_status(dry_run=self.dry_run, connected=self.dry_run)
 
@@ -79,13 +86,24 @@ class PantheraRunner:
         if sdk_scripts and sdk_scripts not in sys.path:
             sys.path.insert(0, sdk_scripts)
 
-        from Panthera_lib import Panthera
+        from Panthera_lib import Panthera, TrajectoryRecorder
 
         robot_config = self.config.get("robot_config_path") or None
         self.robot = Panthera(robot_config)
+        self.TrajectoryRecorder = TrajectoryRecorder
         self.robot.send_get_motor_state_cmd()
         self.robot.motor_send_cmd()
         update_status(connected=True, message="机械臂 SDK 初始化完成")
+
+    def record_home(self):
+        self.connect()
+        if self.dry_run:
+            raise RuntimeError("dry_run 模式无法记录真实点位")
+
+        joint_angles = self.robot.get_current_pos().tolist()
+        self.config.setdefault("positions", {})["home"] = joint_angles
+        save_config(self.config)
+        update_status(message=f"home 已记录: {joint_angles}")
 
     def run_drink(self, drink_id, sequence=None, drink_name=None):
         drink_id = int(drink_id)
@@ -106,21 +124,27 @@ class PantheraRunner:
                 state="running",
                 activeDrink={"id": drink_id, "name": resolved_name, "sequence": sequence},
                 currentPoint=None,
+                currentSegment=None,
                 progress=0,
                 message=f"开始执行 {drink_id}号 {resolved_name}",
             )
             self.connect()
-            self._move_home()
+
+            if self.config.get("move_home_before_run", True):
+                self._move_home()
 
             total = len(sequence)
             for index, point_id in enumerate(sequence, start=1):
                 self._execute_point(point_id, index, total)
 
-            self._move_home()
+            if self.config.get("move_home_after_run", True):
+                self._move_home()
+
             update_status(
                 busy=False,
                 state="done",
                 currentPoint=None,
+                currentSegment=None,
                 progress=100,
                 message=f"{resolved_name} 调制完成，机械臂已复位",
             )
@@ -134,16 +158,53 @@ class PantheraRunner:
         finally:
             RUN_LOCK.release()
 
+    def reset(self):
+        if not RUN_LOCK.acquire(blocking=False):
+            raise RuntimeError("机械臂正在执行任务，无法复位")
+
+        try:
+            update_status(state="resetting", busy=True, message="正在复位机械臂")
+            self.connect()
+            self._gripper_close()
+            self._move_home()
+            update_status(
+                state="idle",
+                busy=False,
+                currentPoint=None,
+                currentSegment=None,
+                progress=0,
+                message="机械臂已复位",
+            )
+        except Exception as exc:
+            update_status(state="error", busy=False, message=f"复位失败: {exc}")
+            raise
+        finally:
+            RUN_LOCK.release()
+
     def _validate_sequence(self, sequence):
-        points = self.config["points"]
+        points = self.config.get("points", {})
         for point_id in sequence:
             point = points.get(str(point_id))
             if not point:
                 raise ValueError(f"点位 {point_id} 未配置")
-            self._validate_joint_array(point["approach"], f"{point_id}.approach")
-            self._validate_joint_array(point["pick"], f"{point_id}.pick")
-        self._validate_joint_array(self.config["positions"]["home"], "positions.home")
-        self._validate_joint_array(self.config["positions"]["mix"], "positions.mix")
+
+            if "trajectories" in point:
+                self._validate_trajectories(str(point_id), point["trajectories"])
+            else:
+                self._validate_joint_array(point.get("approach"), f"{point_id}.approach")
+                self._validate_joint_array(point.get("pick"), f"{point_id}.pick")
+
+        self._validate_joint_array(self.config.get("positions", {}).get("home"), "positions.home")
+        if "mix" in self.config.get("positions", {}):
+            self._validate_joint_array(self.config["positions"]["mix"], "positions.mix")
+
+    def _validate_trajectories(self, point_id, trajectories):
+        for segment in self._trajectory_segment_order():
+            filepath = trajectories.get(segment)
+            if not filepath:
+                raise ValueError(f"点位 {point_id} 缺少轨迹片段: {segment}")
+            if not self.dry_run and not self._resolve_path(filepath).is_file():
+                raise ValueError(f"轨迹文件不存在: {filepath}")
 
     @staticmethod
     def _validate_joint_array(value, label):
@@ -153,45 +214,114 @@ class PantheraRunner:
     def _execute_point(self, point_id, index, total):
         point_id = str(point_id)
         point = self.config["points"][point_id]
-        progress_base = int(((index - 1) / total) * 100)
 
+        if "trajectories" not in point:
+            self._execute_point_by_positions(point_id, point, index, total)
+            return
+
+        segment_order = self._trajectory_segment_order()
+        for segment_index, segment in enumerate(segment_order, start=1):
+            progress = self._segment_progress(index, total, segment_index, len(segment_order))
+            update_status(
+                state=self._segment_state(segment),
+                currentPoint=point_id,
+                currentSegment=segment,
+                progress=progress,
+                message=f"播放点位 {point_id} {point['name']} 轨迹: {segment}",
+            )
+            self._play_trajectory(point_id, point, segment)
+
+        update_status(
+            currentSegment=None,
+            progress=int(index / total * 100),
+            message=f"点位 {point_id} 完成",
+        )
+
+    def _execute_point_by_positions(self, point_id, point, index, total):
+        progress_base = int((index - 1) / total * 100)
         update_status(
             state="picking",
             currentPoint=point_id,
+            currentSegment=None,
             progress=progress_base,
             message=f"前往点位 {point_id} {point['name']}",
         )
         self._gripper_open()
         self._move(point["approach"], f"{point_id} approach")
-        #self._move(point["pick"], f"{point_id} pick")
+        self._move(point["pick"], f"{point_id} pick")
 
         update_status(message=f"夹取 {point_id} {point['name']}")
         self._gripper_close()
         self._sleep("grip_wait_seconds")
 
-        #self._move(point["approach"], f"{point_id} lift")
+        self._move(point["approach"], f"{point_id} lift")
         update_status(
             state="mixing",
             progress=min(progress_base + int(45 / total), 95),
             message=f"{point['name']} 移动至调配位",
         )
-        #self._move(self.config["positions"]["mix"], "mix")
-        self._sleep("pour_wait_seconds")
+        self._move(self.config["positions"]["mix"], "mix")
 
         update_status(message=f"{point['name']} 回放原点位 {point_id}")
-        #self._move(point["approach"], f"{point_id} return approach")
-        #self._move(point["pick"], f"{point_id} return pick")
+        self._move(point["approach"], f"{point_id} return approach")
+        self._move(point["pick"], f"{point_id} return pick")
         self._gripper_open()
         self._sleep("return_wait_seconds")
-        #self._move(point["approach"], f"{point_id} clear")
-        update_status(progress=int((index / total) * 100), message=f"点位 {point_id} 完成")
+        self._move(point["approach"], f"{point_id} clear")
+        update_status(progress=int(index / total * 100), message=f"点位 {point_id} 完成")
+
+    def _trajectory_segment_order(self):
+        playback = self.config.get("trajectory_playback", {})
+        return playback.get("segment_order", ["to_mix", "return"])
+
+    @staticmethod
+    def _segment_state(segment):
+        if segment == "pick":
+            return "picking"
+        if segment == "to_mix":
+            return "mixing"
+        if segment == "return":
+            return "returning"
+        return "running"
+
+    @staticmethod
+    def _segment_progress(point_index, point_total, segment_index, segment_total):
+        completed_points = point_index - 1
+        completed_segments = segment_index - 1
+        progress = (completed_points + completed_segments / segment_total) / point_total * 100
+        return min(int(progress), 99)
+
+    def _play_trajectory(self, point_id, point, segment):
+        filepath = point["trajectories"][segment]
+        resolved_path = self._resolve_path(filepath)
+
+        if self.dry_run:
+            time.sleep(0.35)
+            return
+
+        if self.TrajectoryRecorder is None:
+            raise RuntimeError("TrajectoryRecorder 未初始化")
+
+        playback = self.config.get("trajectory_playback", {})
+        self.TrajectoryRecorder.play(
+            robot=self.robot,
+            filepath=str(resolved_path),
+            kp=playback.get("kp", [30.0, 40.0, 55.0, 15.0, 7.0, 5.0]),
+            kd=playback.get("kd", [3.0, 4.0, 5.5, 1.5, 0.7, 0.5]),
+            fc=playback.get("fc", [0.15, 0.12, 0.12, 0.12, 0.04, 0.04]),
+            fv=playback.get("fv", [0.05, 0.05, 0.05, 0.03, 0.02, 0.02]),
+            vel_threshold=float(playback.get("vel_threshold", 0.02)),
+            tau_limit=playback.get("tau_limit", [15.0, 30.0, 30.0, 15.0, 5.0, 5.0]),
+            gripper_kp=float(playback.get("gripper_kp", 5.0)),
+            gripper_kd=float(playback.get("gripper_kd", 0.5)),
+        )
 
     def _move_home(self):
-        update_status(state="homing", currentPoint=None, message="机械臂复位")
+        update_status(state="homing", currentPoint=None, currentSegment=None, message="机械臂复位")
         self._move(self.config["positions"]["home"], "home")
 
     def _move(self, joints, label):
-        motion = self.config["motion"]
+        motion = self.config.get("motion", {})
         if self.dry_run:
             time.sleep(0.25)
             return
@@ -204,22 +334,29 @@ class PantheraRunner:
         )
 
     def _gripper_open(self):
-        motion = self.config["motion"]
+        motion = self.config.get("motion", {})
         if self.dry_run:
             time.sleep(0.1)
             return
         self.robot.gripper_open(pos=float(motion.get("gripper_open_pos", 1.6)))
 
     def _gripper_close(self):
-        motion = self.config["motion"]
+        motion = self.config.get("motion", {})
         if self.dry_run:
             time.sleep(0.1)
             return
         self.robot.gripper_close(pos=float(motion.get("gripper_close_pos", 0.0)))
 
     def _sleep(self, key):
-        seconds = float(self.config["motion"].get(key, 1.0))
+        seconds = float(self.config.get("motion", {}).get(key, 1.0))
         time.sleep(seconds if not self.dry_run else min(seconds, 0.3))
+
+    @staticmethod
+    def _resolve_path(filepath):
+        path = Path(filepath)
+        if path.is_absolute():
+            return path
+        return ROOT / path
 
 
 RUNNER = PantheraRunner(load_config())
@@ -261,6 +398,8 @@ class Handler(SimpleHTTPRequestHandler):
                 thread.start()
                 self._send_json({"ok": True, "message": "任务已接收"})
                 return
+            import sys
+            sys.path.append("/media/yan/D/Moce/Code/ai/ai")
             if path == "/api/momotender/recommend":
                 from momotender_service import recommend_for_web
 
@@ -269,6 +408,14 @@ class Handler(SimpleHTTPRequestHandler):
             if path == "/api/connect":
                 RUNNER.connect()
                 self._send_json({"ok": True, "status": status_snapshot()})
+                return
+            if path == "/api/record_home":
+                RUNNER.record_home()
+                self._send_json({"ok": True, "message": "home 点位已记录"})
+                return
+            if path == "/api/reset":
+                RUNNER.reset()
+                self._send_json({"ok": True})
                 return
             self._send_json({"ok": False, "error": "unknown endpoint"}, 404)
         except Exception as exc:
