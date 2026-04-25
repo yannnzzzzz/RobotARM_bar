@@ -7,237 +7,431 @@
   <style>
     :root {
       color-scheme: dark;
-      --bg: #101113;
-      --panel: #181a1d;
-      --panel-2: #202328;
-      --text: #f3f0e8;
-      --muted: #a7a9ad;
-      --line: #34383f;
-      --amber: #d4a84f;
-      --cyan: #57b7c9;
-      --green: #6fbf8f;
-      --red: #d46b5f;
-      --steel: #8c949f;
-      --shadow: 0 22px 70px rgba(0, 0, 0, .38);
+      --ink: #f7efe1;
+      --paper: #efe1c8;
+      --muted: #c8b895;
+      --faint: rgba(247, 239, 225, .62);
+      --line: rgba(247, 239, 225, .22);
+      --field: #963629;
+      --field-deep: #64231d;
+      --wine: #581d18;
+      --wine-2: #7d271f;
+      --olive: #263526;
+      --gold: #c89c5b;
+      --shadow: 0 36px 110px rgba(0, 0, 0, .52);
     }
 
     * {
       box-sizing: border-box;
     }
 
+    html {
+      min-height: 100%;
+      background: var(--field);
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
-      background:
-        linear-gradient(110deg, rgba(212, 168, 79, .12), transparent 34%),
-        radial-gradient(circle at 78% 12%, rgba(87, 183, 201, .18), transparent 24%),
-        linear-gradient(180deg, #141517 0%, var(--bg) 58%, #0b0c0d 100%);
-      color: var(--text);
+      font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--field);
+      overflow-x: hidden;
     }
 
     button {
       font: inherit;
     }
 
-    .shell {
-      width: min(1440px, 100%);
-      min-height: 100vh;
-      margin: 0 auto;
-      padding: 32px;
-      display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 24px;
+    button:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 4px;
     }
 
-    .topbar {
-      display: flex;
-      align-items: end;
-      justify-content: space-between;
+    .atelier {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      padding: 28px 36px 34px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
       gap: 24px;
-      border-bottom: 1px solid var(--line);
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .letter-wall {
+      position: absolute;
+      inset: 96px -8vw auto;
+      z-index: 0;
+      display: grid;
+      gap: 12px;
+      pointer-events: none;
+      overflow: hidden;
+      opacity: .84;
+    }
+
+    .letter-track {
+      display: flex;
+      width: max-content;
+      white-space: nowrap;
+      color: rgba(239, 225, 200, .2);
+      font-family: Georgia, "Times New Roman", "Songti SC", serif;
+      font-size: clamp(62px, 11vw, 178px);
+      font-weight: 500;
+      line-height: .86;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+      mix-blend-mode: soft-light;
+      animation: marquee 34s linear infinite;
+    }
+
+    .letter-track span {
+      padding-right: .42em;
+    }
+
+    .letter-track.reverse {
+      color: rgba(239, 225, 200, .14);
+      font-size: clamp(48px, 8.4vw, 132px);
+      animation-duration: 42s;
+      animation-direction: reverse;
+      transform: translateX(-18%);
+    }
+
+    @keyframes marquee {
+      from {
+        transform: translateX(0);
+      }
+
+      to {
+        transform: translateX(-50%);
+      }
+    }
+
+    .site-header,
+    .hero,
+    .menu-panel {
+      position: relative;
+      z-index: 1;
+    }
+
+    .site-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+    }
+
+    .brand-mark {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .seal {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1px solid rgba(200, 156, 91, .72);
+      color: var(--gold);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 18px;
+      letter-spacing: .04em;
+      background: rgba(100, 35, 29, .52);
+      box-shadow: inset 0 0 18px rgba(200, 156, 91, .12);
+      flex: 0 0 auto;
+    }
+
+    .brand-title {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", "Songti SC", serif;
+      font-size: 24px;
+      font-weight: 500;
+      letter-spacing: .05em;
+      line-height: 1;
+    }
+
+    .brand-subtitle {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .status-pill,
+    .control-toggle {
+      min-height: 42px;
+      border: 1px solid rgba(247, 239, 225, .24);
+      border-radius: 999px;
+      background: rgba(100, 35, 29, .46);
+      color: var(--ink);
+      padding: 0 15px;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .control-toggle {
+      cursor: pointer;
+      color: var(--paper);
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #97c991;
+      box-shadow: 0 0 16px rgba(151, 201, 145, .78);
+      flex: 0 0 auto;
+    }
+
+    .hero {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(310px, .88fr) minmax(380px, 1.22fr) minmax(320px, .68fr);
+      align-items: center;
+      gap: 28px;
+    }
+
+    .copy-panel {
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
       padding-bottom: 22px;
+    }
+
+    .eyebrow {
+      margin: 0 0 18px;
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .22em;
+      text-transform: uppercase;
     }
 
     h1 {
       margin: 0;
-      font-size: clamp(34px, 5vw, 72px);
-      line-height: 1;
+      font-family: Georgia, "Times New Roman", "Songti SC", serif;
+      font-size: 66px;
+      line-height: .95;
+      font-weight: 500;
       letter-spacing: 0;
-      font-weight: 800;
+      text-wrap: balance;
     }
 
-    .subtitle {
-      margin: 12px 0 0;
-      color: var(--muted);
-      font-size: 18px;
+    .intro {
+      width: min(100%, 520px);
+      margin: 24px 0 0;
+      color: var(--faint);
+      font-size: 17px;
+      line-height: 1.85;
     }
 
-    .system-pill {
-      flex: 0 0 auto;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 14px 18px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(24, 26, 29, .82);
-      color: var(--muted);
-      box-shadow: var(--shadow);
-    }
-
-    .dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 22px rgba(111, 191, 143, .9);
-    }
-
-    .grid {
+    .current-line {
+      width: min(100%, 520px);
+      margin-top: 34px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
       display: grid;
-      grid-template-columns: minmax(0, 1.35fr) minmax(360px, .65fr);
-      gap: 22px;
-      min-height: 0;
-    }
-
-    .drinks {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
-      align-content: start;
-    }
-
-    .drink-button {
-      min-height: 248px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background:
-        linear-gradient(145deg, rgba(255, 255, 255, .05), transparent),
-        var(--panel);
-      color: var(--text);
-      padding: 26px;
-      text-align: left;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 22px;
-      box-shadow: var(--shadow);
-      transition: transform .18s ease, border-color .18s ease, background .18s ease;
-    }
-
-    .drink-button:hover {
-      transform: translateY(-2px);
-      border-color: rgba(212, 168, 79, .7);
-    }
-
-    .drink-button.active {
-      border-color: var(--amber);
-      background:
-        linear-gradient(145deg, rgba(212, 168, 79, .18), rgba(87, 183, 201, .06)),
-        var(--panel-2);
-    }
-
-    .drink-head {
-      display: flex;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
       align-items: start;
-      justify-content: space-between;
-      gap: 18px;
     }
 
-    .drink-no {
-      width: 54px;
-      height: 54px;
+    .current-number {
+      color: var(--gold);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 54px;
+      line-height: .9;
+    }
+
+    .current-name {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", "Songti SC", serif;
+      font-size: 34px;
+      font-weight: 500;
+      line-height: 1.05;
+    }
+
+    .current-sub {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .drink-theatre {
+      position: relative;
+      min-height: 640px;
       display: grid;
       place-items: center;
+    }
+
+    .drink-theatre::before {
+      content: "";
+      position: absolute;
+      left: 6%;
+      right: 6%;
+      bottom: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(247, 239, 225, .46), transparent);
+    }
+
+    .drink-theatre::after {
+      content: "";
+      position: absolute;
+      width: 58%;
+      height: 18px;
+      bottom: 8%;
       border-radius: 50%;
-      border: 1px solid rgba(243, 240, 232, .24);
-      color: var(--amber);
-      font-size: 22px;
-      font-weight: 800;
-      flex: 0 0 auto;
+      background: rgba(0, 0, 0, .42);
+      filter: blur(12px);
     }
 
-    .drink-name {
-      margin: 0;
-      font-size: clamp(28px, 3vw, 48px);
-      line-height: 1.05;
-      letter-spacing: 0;
-      font-weight: 800;
+    .featured-drink {
+      position: relative;
+      z-index: 1;
+      width: min(96%, 680px);
+      max-height: 660px;
+      object-fit: contain;
+      filter: drop-shadow(0 40px 42px rgba(0, 0, 0, .58));
+      transform: translateY(2px);
+      transition: opacity .22s ease, transform .22s ease, filter .22s ease;
     }
 
-    .recipe {
-      margin: 0;
-      color: var(--muted);
+    .featured-drink.swap {
+      opacity: .25;
+      transform: translateY(12px) scale(.98);
+      filter: drop-shadow(0 40px 42px rgba(0, 0, 0, .58));
+    }
+
+    .drink-caption {
+      position: absolute;
+      left: 0;
+      bottom: 26px;
+      z-index: 2;
+      color: rgba(247, 239, 225, .68);
+      font-family: Georgia, "Times New Roman", serif;
       font-size: 16px;
-      line-height: 1.75;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      writing-mode: vertical-rl;
     }
 
-    .sequence {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      min-height: 32px;
-    }
-
-    .tag {
-      border: 1px solid rgba(255, 255, 255, .16);
-      border-radius: 999px;
-      padding: 6px 10px;
-      color: var(--text);
-      background: rgba(255, 255, 255, .06);
-      font-size: 14px;
-    }
-
-    .side {
-      display: grid;
-      gap: 18px;
-      align-content: start;
-    }
-
-    .panel {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(24, 26, 29, .92);
+    .control-drawer {
+      align-self: center;
+      justify-self: end;
+      width: min(100%, 390px);
+      max-height: calc(100vh - 150px);
+      overflow: auto;
+      padding: 24px;
+      border-radius: 30px;
+      border: 1px solid rgba(247, 239, 225, .24);
+      background:
+        linear-gradient(180deg, rgba(239, 225, 200, .14), rgba(100, 35, 29, .7)),
+        rgba(100, 35, 29, .58);
       box-shadow: var(--shadow);
-      padding: 22px;
+      backdrop-filter: blur(22px) saturate(1.08);
+      -webkit-backdrop-filter: blur(22px) saturate(1.08);
+      scrollbar-color: rgba(200, 156, 91, .42) transparent;
+      transition: opacity .24s ease, transform .24s ease, visibility .24s ease;
     }
 
-    .panel h2 {
-      margin: 0 0 18px;
-      font-size: 20px;
+    .atelier.control-hidden .control-drawer {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateX(28px);
+    }
+
+    .drawer-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .drawer-kicker,
+    .menu-kicker {
+      margin: 0 0 6px;
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    .drawer-title,
+    .menu-title {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", "Songti SC", serif;
+      font-weight: 500;
       letter-spacing: 0;
+    }
+
+    .drawer-title {
+      font-size: 28px;
+    }
+
+    .run-button {
+      min-height: 48px;
+      border: 0;
+      border-radius: 999px;
+      padding: 0 20px;
+      background: var(--paper);
+      color: #25150f;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 18px 38px rgba(0, 0, 0, .24);
+      white-space: nowrap;
+    }
+
+    .run-button:disabled {
+      cursor: not-allowed;
+      opacity: .45;
+      box-shadow: none;
     }
 
     .status-list {
       display: grid;
-      gap: 14px;
+      gap: 16px;
     }
 
     .status-row {
       display: grid;
-      grid-template-columns: 112px 1fr;
+      grid-template-columns: 82px 1fr;
       gap: 14px;
-      align-items: start;
-      padding-bottom: 14px;
-      border-bottom: 1px solid rgba(255, 255, 255, .08);
-    }
-
-    .status-row:last-child {
-      border-bottom: 0;
-      padding-bottom: 0;
+      padding-top: 14px;
+      border-top: 1px solid rgba(247, 239, 225, .16);
     }
 
     .label {
-      color: var(--steel);
-      font-size: 14px;
+      color: rgba(247, 239, 225, .55);
+      font-size: 13px;
     }
 
     .value {
-      color: var(--text);
-      font-size: 17px;
-      line-height: 1.5;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.55;
       min-width: 0;
       word-break: break-word;
     }
@@ -246,129 +440,318 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      color: var(--green);
+      color: #b7d8a7;
       font-weight: 700;
     }
 
     .state.running {
-      color: var(--amber);
+      color: var(--gold);
     }
 
     .state.done {
-      color: var(--cyan);
+      color: #b8d3ce;
     }
 
     .progress {
-      height: 10px;
+      height: 8px;
+      margin-top: 10px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, .1);
       overflow: hidden;
-      margin-top: 8px;
+      background: rgba(247, 239, 225, .13);
     }
 
     .progress-fill {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, var(--amber), var(--cyan));
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--gold), var(--wine-2), var(--paper));
       transition: width .28s ease;
     }
 
-    .map {
+    .drawer-section {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(247, 239, 225, .16);
+    }
+
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 14px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .point-map {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
+      gap: 10px 14px;
     }
 
     .map-item {
-      border: 1px solid rgba(255, 255, 255, .1);
-      border-radius: 8px;
-      padding: 12px;
-      background: rgba(255, 255, 255, .04);
-      min-height: 72px;
+      min-width: 0;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 9px;
+      align-items: baseline;
     }
 
     .point {
-      color: var(--amber);
-      font-size: 21px;
-      font-weight: 800;
+      color: var(--gold);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 16px;
     }
 
     .ingredient {
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: 14px;
+      color: rgba(247, 239, 225, .68);
+      font-size: 13px;
+      min-width: 0;
     }
 
     .log {
-      min-height: 128px;
+      max-height: 144px;
+      min-height: 84px;
       display: grid;
-      gap: 8px;
-      color: var(--muted);
-      font-size: 14px;
+      align-content: start;
+      gap: 9px;
+      overflow: auto;
+      color: rgba(247, 239, 225, .68);
+      font-size: 13px;
       line-height: 1.45;
+      scrollbar-color: rgba(200, 156, 91, .42) transparent;
     }
 
     .log-line {
-      padding: 8px 10px;
-      border-left: 3px solid rgba(212, 168, 79, .8);
-      background: rgba(255, 255, 255, .04);
+      padding-left: 10px;
+      border-left: 1px solid rgba(200, 156, 91, .58);
     }
 
-    .hint {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.65;
-      font-size: 15px;
+    .menu-panel {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 24px;
+      align-items: end;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
     }
 
-    .run-button {
-      width: 100%;
-      min-height: 58px;
-      margin-top: 16px;
-      border: 1px solid rgba(212, 168, 79, .7);
-      border-radius: 8px;
-      background: var(--amber);
-      color: #15130e;
-      font-size: 18px;
-      font-weight: 800;
+    .menu-title {
+      color: var(--paper);
+      font-size: 28px;
+      white-space: nowrap;
+    }
+
+    .drink-menu {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .drink-button {
+      --accent: var(--gold);
+      position: relative;
+      min-height: 154px;
+      border: 1px solid rgba(247, 239, 225, .18);
+      border-radius: 28px;
+      background:
+        linear-gradient(180deg, rgba(239, 225, 200, .16), rgba(100, 35, 29, .5)),
+        rgba(100, 35, 29, .42);
+      color: var(--ink);
       cursor: pointer;
+      padding: 14px 14px 12px;
+      display: grid;
+      grid-template-columns: 112px 1fr;
+      gap: 14px;
+      align-items: center;
+      text-align: left;
+      overflow: hidden;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
     }
 
-    .run-button:disabled {
+    .drink-button::after {
+      content: "";
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 9px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: .35;
+    }
+
+    .drink-button:hover {
+      transform: translateY(-4px);
+      border-color: rgba(200, 156, 91, .56);
+    }
+
+    .drink-button.is-active {
+      border-color: var(--accent);
+      background:
+        linear-gradient(180deg, rgba(239, 225, 200, .2), rgba(88, 29, 24, .5)),
+        rgba(100, 35, 29, .58);
+    }
+
+    .drink-button:disabled {
       cursor: not-allowed;
-      opacity: .52;
+      opacity: .55;
+      transform: none;
+    }
+
+    .menu-image-wrap {
+      width: 112px;
+      height: 120px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(239, 225, 200, .1);
+      align-self: center;
+    }
+
+    .menu-image {
+      width: 126px;
+      height: 126px;
+      object-fit: contain;
+      filter: drop-shadow(0 16px 18px rgba(0, 0, 0, .4));
+    }
+
+    .drink-no {
+      display: block;
+      color: var(--accent);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 15px;
+      margin-bottom: 7px;
+    }
+
+    .drink-name {
+      display: block;
+      margin: 0;
+      font-family: Georgia, "Times New Roman", "Songti SC", serif;
+      font-size: 23px;
+      line-height: 1.05;
+      font-weight: 500;
+    }
+
+    .recipe {
+      display: block;
+      margin: 8px 0 0;
+      color: rgba(247, 239, 225, .64);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .sequence {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .tag {
+      border-radius: 999px;
+      padding: 3px 7px;
+      color: rgba(247, 239, 225, .82);
+      background: rgba(247, 239, 225, .08);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 1260px) {
+      .atelier {
+        min-height: 100vh;
+        overflow: visible;
+      }
+
+      .hero {
+        grid-template-columns: minmax(300px, .92fr) minmax(360px, 1.08fr);
+      }
+
+      .control-drawer {
+        grid-column: 1 / -1;
+        justify-self: stretch;
+        width: 100%;
+        max-height: none;
+      }
+
+      .menu-panel {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
     }
 
     @media (max-width: 980px) {
-      .shell {
-        padding: 22px;
+      .atelier {
+        padding: 20px;
       }
 
-      .topbar {
-        align-items: start;
+      .site-header {
+        align-items: flex-start;
         flex-direction: column;
       }
 
-      .grid {
+      .hero {
         grid-template-columns: 1fr;
       }
 
-      .drinks {
+      h1 {
+        font-size: 48px;
+      }
+
+      .drink-theatre {
+        min-height: 460px;
+      }
+
+      .featured-drink {
+        width: min(92%, 520px);
+        max-height: 460px;
+      }
+
+      .drink-menu {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 620px) {
+      .atelier {
+        padding: 16px;
+        gap: 18px;
+      }
+
+      .top-actions {
+        width: 100%;
+      }
+
+      .status-pill,
+      .control-toggle {
+        width: 100%;
+        justify-content: center;
+      }
+
+      h1 {
+        font-size: 39px;
+      }
+
+      .current-line {
+        grid-template-columns: 1fr;
+      }
+
+      .drink-menu {
         grid-template-columns: 1fr;
       }
 
       .drink-button {
-        min-height: 220px;
-      }
-    }
-
-    @media (max-width: 520px) {
-      .shell {
-        padding: 16px;
+        min-height: 144px;
+        grid-template-columns: 102px 1fr;
       }
 
-      .map {
-        grid-template-columns: 1fr;
+      .drawer-head {
+        flex-direction: column;
+      }
+
+      .run-button {
+        width: 100%;
       }
 
       .status-row {
@@ -376,70 +759,115 @@
         gap: 4px;
       }
 
-      .drink-name {
-        font-size: 30px;
+      .point-map {
+        grid-template-columns: 1fr;
       }
     }
   </style>
 </head>
 <body>
-  <main class="shell">
-    <header class="topbar">
-      <div>
-        <h1>智能自助调酒系统</h1>
-        <p class="subtitle">选择酒品后，系统自动匹配原料点位并下发机械臂执行序列。</p>
+  <main class="atelier" id="atelier">
+    <div class="letter-wall" aria-hidden="true">
+      <div class="letter-track">
+        <span>COCKTAIL POPOLARI · ROBOT BAR · </span>
+        <span>COCKTAIL POPOLARI · ROBOT BAR · </span>
+        <span>COCKTAIL POPOLARI · ROBOT BAR · </span>
+        <span>COCKTAIL POPOLARI · ROBOT BAR · </span>
       </div>
-      <div class="system-pill" aria-live="polite">
-        <span class="dot"></span>
-        <span>机械臂控制链路在线</span>
+      <div class="letter-track reverse">
+        <span>APERITIVO · AUTOMATIC MIXOLOGY · </span>
+        <span>APERITIVO · AUTOMATIC MIXOLOGY · </span>
+        <span>APERITIVO · AUTOMATIC MIXOLOGY · </span>
+        <span>APERITIVO · AUTOMATIC MIXOLOGY · </span>
+      </div>
+    </div>
+
+    <header class="site-header">
+      <div class="brand-mark">
+        <div class="seal">RB</div>
+        <div>
+          <p class="brand-title">Robot Bar</p>
+          <p class="brand-subtitle">Automatic cocktail atelier</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="status-pill" aria-live="polite">
+          <span class="status-dot"></span>
+          <span>机械臂调酒台待命</span>
+        </div>
+        <button class="control-toggle" id="controlToggle" type="button" aria-pressed="false">隐藏控制台</button>
       </div>
     </header>
 
-    <section class="grid">
-      <div class="drinks" id="drinkGrid" aria-label="酒品选择"></div>
+    <section class="hero" aria-label="调酒菜单与控制台">
+      <section class="copy-panel">
+        <p class="eyebrow">Cocktail Popolari</p>
+        <h1>自助机械臂鸡尾酒</h1>
+        <p class="intro">像高级酒吧菜单一样选酒，后台仍然按点位序列驱动机械臂取料、复位和调制。</p>
 
-      <aside class="side">
-        <section class="panel" aria-live="polite">
-          <h2>运行状态</h2>
-          <div class="status-list">
-            <div class="status-row">
-              <div class="label">当前酒品</div>
-              <div class="value" id="selectedDrink">未选择</div>
-            </div>
-            <div class="status-row">
-              <div class="label">原料编号</div>
-              <div class="value" id="selectedSequence">等待选择酒品</div>
-            </div>
-            <div class="status-row">
-              <div class="label">机械臂状态</div>
-              <div class="value">
-                <span class="state" id="armState"><span class="dot"></span>待机</span>
-                <div class="progress" aria-hidden="true">
-                  <div class="progress-fill" id="progressFill"></div>
-                </div>
+        <div class="current-line">
+          <div class="current-number" id="featureNumber">01</div>
+          <div>
+            <h2 class="current-name" id="featureName">椰林飘香</h2>
+            <p class="current-sub" id="featureSub">Rum · Pineapple · Coconut</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="drink-theatre" aria-live="polite">
+        <div class="drink-caption" id="drinkCaption">Luau Coconut</div>
+        <img class="featured-drink" id="featuredImage" src="pic/coconut.png" alt="椰林飘香">
+      </section>
+
+      <aside class="control-drawer" id="controlDrawer" aria-label="机械臂控制台">
+        <div class="drawer-head">
+          <div>
+            <p class="drawer-kicker">Live Control</p>
+            <h2 class="drawer-title">调制控制</h2>
+          </div>
+          <button class="run-button" id="runButton" disabled>开始调制</button>
+        </div>
+
+        <div class="status-list">
+          <div class="status-row">
+            <div class="label">当前酒品</div>
+            <div class="value" id="selectedDrink">未选择</div>
+          </div>
+          <div class="status-row">
+            <div class="label">原料编号</div>
+            <div class="value" id="selectedSequence">等待选择酒品</div>
+          </div>
+          <div class="status-row">
+            <div class="label">机械臂</div>
+            <div class="value">
+              <span class="state" id="armState"><span class="status-dot"></span>待机</span>
+              <div class="progress" aria-hidden="true">
+                <div class="progress-fill" id="progressFill"></div>
               </div>
             </div>
           </div>
-          <button class="run-button" id="runButton" disabled>开始调制</button>
+        </div>
+
+        <section class="drawer-section">
+          <h2 class="section-title">Fixed Points</h2>
+          <div class="point-map" id="pointMap"></div>
         </section>
 
-        <section class="panel">
-          <h2>固定点位</h2>
-          <div class="map" id="pointMap"></div>
-        </section>
-
-        <section class="panel">
-          <h2>执行提示</h2>
-          <p class="hint">先选择 1/2/3/4 号酒品，再点击开始调制。糖浆与冰块为辅助添加项，不进入机械臂编号抓取序列。</p>
-        </section>
-
-        <section class="panel">
-          <h2>指令日志</h2>
+        <section class="drawer-section">
+          <h2 class="section-title">Command Log</h2>
           <div class="log" id="log">
             <div class="log-line">等待用户选择酒品。</div>
           </div>
         </section>
       </aside>
+    </section>
+
+    <section class="menu-panel" aria-label="酒品选择">
+      <div>
+        <p class="menu-kicker">Tonight's menu</p>
+        <h2 class="menu-title">四款特调</h2>
+      </div>
+      <div class="drink-menu" id="drinkGrid"></div>
     </section>
   </main>
 
@@ -458,33 +886,51 @@
       {
         id: 1,
         name: "椰林飘香",
+        english: "Luau Coconut",
+        profile: "Rum · Pineapple · Coconut",
         recipe: ["朗姆酒 40ml", "菠萝汁 60ml", "厚椰乳 40ml", "冰块", "加冰摇匀"],
         sequence: ["01", "02", "03"],
-        auxiliary: ["冰块"]
+        auxiliary: ["冰块"],
+        image: "pic/coconut.png",
+        accent: "#d7b46a"
       },
       {
         id: 2,
         name: "蓝色椰风",
+        english: "Blue Colada",
+        profile: "Blue Orange · Coconut · Pineapple",
         recipe: ["蓝橙力娇酒 20ml", "厚椰乳 40ml", "菠萝汁 40ml", "冰块", "加冰摇匀"],
         sequence: ["04", "03", "02"],
-        auxiliary: ["冰块"]
+        auxiliary: ["冰块"],
+        image: "pic/blue.png",
+        accent: "#8fc5d8"
       },
       {
         id: 3,
         name: "桂花橙香",
+        english: "Osmanthus Orange",
+        profile: "Whisky · Orange · Osmanthus",
         recipe: ["威士忌 40ml", "橙汁 60ml", "桂花糖浆 10-15ml", "冰块", "搅拌即可"],
         sequence: ["05", "06"],
-        auxiliary: ["桂花糖浆", "冰块"]
+        auxiliary: ["桂花糖浆", "冰块"],
+        image: "pic/orange.png",
+        accent: "#d68a3e"
       },
       {
         id: 4,
         name: "柠檬暴击啤",
+        english: "Lemon Lager Highball",
+        profile: "Lemon Lager · Orange · Citrus",
         recipe: ["暴打柠檬拉格啤酒", "橙汁或菠萝汁 10-20ml", "直接混合"],
         sequence: ["07", "06"],
-        auxiliary: ["可切换少量果汁点位 06/02"]
+        auxiliary: ["可切换少量果汁点位 06/02"],
+        image: "pic/lemon.png",
+        accent: "#cdd66f"
       }
     ];
 
+    const atelier = document.querySelector("#atelier");
+    const controlToggle = document.querySelector("#controlToggle");
     const drinkGrid = document.querySelector("#drinkGrid");
     const pointMap = document.querySelector("#pointMap");
     const selectedDrink = document.querySelector("#selectedDrink");
@@ -493,6 +939,11 @@
     const progressFill = document.querySelector("#progressFill");
     const runButton = document.querySelector("#runButton");
     const log = document.querySelector("#log");
+    const featureNumber = document.querySelector("#featureNumber");
+    const featureName = document.querySelector("#featureName");
+    const featureSub = document.querySelector("#featureSub");
+    const featuredImage = document.querySelector("#featuredImage");
+    const drinkCaption = document.querySelector("#drinkCaption");
     const API_BASE = window.location.origin.startsWith("http")
       ? window.location.origin
       : "http://127.0.0.1:8765";
@@ -501,19 +952,28 @@
     let isRunning = false;
     let statusTimer = null;
 
+    function recipePreview(drink) {
+      return drink.recipe.slice(0, 3).join(" · ");
+    }
+
+    function sequenceText(drink) {
+      return drink.sequence.map((point) => `${point} ${ingredientPoints[point]}`).join(" -> ");
+    }
+
     function renderDrinks() {
       drinkGrid.innerHTML = drinks.map((drink) => `
-        <button class="drink-button" data-id="${drink.id}" type="button">
-          <div class="drink-head">
-            <div>
-              <h2 class="drink-name">${drink.name}</h2>
-            </div>
-            <div class="drink-no">${drink.id}</div>
-          </div>
-          <p class="recipe">${drink.recipe.join("<br>")}</p>
-          <div class="sequence">
-            ${drink.sequence.map((point) => `<span class="tag">${point} ${ingredientPoints[point]}</span>`).join("")}
-          </div>
+        <button class="drink-button" style="--accent: ${drink.accent};" data-id="${drink.id}" type="button">
+          <span class="menu-image-wrap">
+            <img class="menu-image" src="${drink.image}" alt="${drink.name}">
+          </span>
+          <span>
+            <span class="drink-no">${String(drink.id).padStart(2, "0")}</span>
+            <span class="drink-name">${drink.name}</span>
+            <span class="recipe">${recipePreview(drink)}</span>
+            <span class="sequence">
+              ${drink.sequence.map((point) => `<span class="tag">${point}</span>`).join("")}
+            </span>
+          </span>
         </button>
       `).join("");
     }
@@ -527,9 +987,22 @@
       `).join("");
     }
 
+    function setFeaturedDrink(drink) {
+      featureNumber.textContent = String(drink.id).padStart(2, "0");
+      featureName.textContent = drink.name;
+      featureSub.textContent = drink.profile;
+      drinkCaption.textContent = drink.english;
+      featuredImage.classList.add("swap");
+      window.setTimeout(() => {
+        featuredImage.src = drink.image;
+        featuredImage.alt = drink.name;
+        featuredImage.classList.remove("swap");
+      }, 120);
+    }
+
     function setState(label, mode = "idle") {
       armState.className = `state ${mode}`;
-      armState.innerHTML = `<span class="dot"></span>${label}`;
+      armState.innerHTML = `<span class="status-dot"></span>${label}`;
     }
 
     function writeLog(lines) {
@@ -540,18 +1013,19 @@
       if (isRunning) return;
       activeDrink = drink;
       document.querySelectorAll(".drink-button").forEach((button) => {
-        button.classList.toggle("active", Number(button.dataset.id) === drink.id);
+        button.classList.toggle("is-active", Number(button.dataset.id) === drink.id);
       });
 
-      const sequenceText = drink.sequence.map((point) => `${point} ${ingredientPoints[point]}`).join(" -> ");
+      const selectedText = sequenceText(drink);
+      setFeaturedDrink(drink);
       selectedDrink.textContent = `${drink.id}号 ${drink.name}`;
-      selectedSequence.textContent = sequenceText;
+      selectedSequence.textContent = selectedText;
       progressFill.style.width = "0%";
       setState("待机");
       runButton.disabled = false;
       writeLog([
         `已选择 ${drink.id}号 ${drink.name}。`,
-        `待执行点位：${sequenceText}。`,
+        `待执行点位：${selectedText}。`,
         `辅助项：${drink.auxiliary.join("、")}。`
       ]);
 
@@ -642,6 +1116,7 @@
 
     renderDrinks();
     renderPointMap();
+    selectDrink(drinks[0]);
 
     drinkGrid.addEventListener("click", (event) => {
       const button = event.target.closest(".drink-button");
@@ -651,6 +1126,12 @@
     });
 
     runButton.addEventListener("click", runSequence);
+
+    controlToggle.addEventListener("click", () => {
+      const isHidden = atelier.classList.toggle("control-hidden");
+      controlToggle.textContent = isHidden ? "显示控制台" : "隐藏控制台";
+      controlToggle.setAttribute("aria-pressed", String(isHidden));
+    });
   </script>
 </body>
 </html>
