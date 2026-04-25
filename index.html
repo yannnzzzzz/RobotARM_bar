@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>智能自助调酒系统</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #101113;
+      --panel: #181a1d;
+      --panel-2: #202328;
+      --text: #f3f0e8;
+      --muted: #a7a9ad;
+      --line: #34383f;
+      --amber: #d4a84f;
+      --cyan: #57b7c9;
+      --green: #6fbf8f;
+      --red: #d46b5f;
+      --steel: #8c949f;
+      --shadow: 0 22px 70px rgba(0, 0, 0, .38);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      background:
+        linear-gradient(110deg, rgba(212, 168, 79, .12), transparent 34%),
+        radial-gradient(circle at 78% 12%, rgba(87, 183, 201, .18), transparent 24%),
+        linear-gradient(180deg, #141517 0%, var(--bg) 58%, #0b0c0d 100%);
+      color: var(--text);
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .shell {
+      width: min(1440px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 32px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 24px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 5vw, 72px);
+      line-height: 1;
+      letter-spacing: 0;
+      font-weight: 800;
+    }
+
+    .subtitle {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .system-pill {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(24, 26, 29, .82);
+      color: var(--muted);
+      box-shadow: var(--shadow);
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 22px rgba(111, 191, 143, .9);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(360px, .65fr);
+      gap: 22px;
+      min-height: 0;
+    }
+
+    .drinks {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      align-content: start;
+    }
+
+    .drink-button {
+      min-height: 248px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, .05), transparent),
+        var(--panel);
+      color: var(--text);
+      padding: 26px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 22px;
+      box-shadow: var(--shadow);
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .drink-button:hover {
+      transform: translateY(-2px);
+      border-color: rgba(212, 168, 79, .7);
+    }
+
+    .drink-button.active {
+      border-color: var(--amber);
+      background:
+        linear-gradient(145deg, rgba(212, 168, 79, .18), rgba(87, 183, 201, .06)),
+        var(--panel-2);
+    }
+
+    .drink-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .drink-no {
+      width: 54px;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1px solid rgba(243, 240, 232, .24);
+      color: var(--amber);
+      font-size: 22px;
+      font-weight: 800;
+      flex: 0 0 auto;
+    }
+
+    .drink-name {
+      margin: 0;
+      font-size: clamp(28px, 3vw, 48px);
+      line-height: 1.05;
+      letter-spacing: 0;
+      font-weight: 800;
+    }
+
+    .recipe {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.75;
+    }
+
+    .sequence {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 32px;
+    }
+
+    .tag {
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 999px;
+      padding: 6px 10px;
+      color: var(--text);
+      background: rgba(255, 255, 255, .06);
+      font-size: 14px;
+    }
+
+    .side {
+      display: grid;
+      gap: 18px;
+      align-content: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(24, 26, 29, .92);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .panel h2 {
+      margin: 0 0 18px;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+
+    .status-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .status-row {
+      display: grid;
+      grid-template-columns: 112px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    .status-row:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .label {
+      color: var(--steel);
+      font-size: 14px;
+    }
+
+    .value {
+      color: var(--text);
+      font-size: 17px;
+      line-height: 1.5;
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .state {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .state.running {
+      color: var(--amber);
+    }
+
+    .state.done {
+      color: var(--cyan);
+    }
+
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .1);
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--amber), var(--cyan));
+      transition: width .28s ease;
+    }
+
+    .map {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .map-item {
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 8px;
+      padding: 12px;
+      background: rgba(255, 255, 255, .04);
+      min-height: 72px;
+    }
+
+    .point {
+      color: var(--amber);
+      font-size: 21px;
+      font-weight: 800;
+    }
+
+    .ingredient {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .log {
+      min-height: 128px;
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .log-line {
+      padding: 8px 10px;
+      border-left: 3px solid rgba(212, 168, 79, .8);
+      background: rgba(255, 255, 255, .04);
+    }
+
+    .hint {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 15px;
+    }
+
+    .run-button {
+      width: 100%;
+      min-height: 58px;
+      margin-top: 16px;
+      border: 1px solid rgba(212, 168, 79, .7);
+      border-radius: 8px;
+      background: var(--amber);
+      color: #15130e;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .run-button:disabled {
+      cursor: not-allowed;
+      opacity: .52;
+    }
+
+    @media (max-width: 980px) {
+      .shell {
+        padding: 22px;
+      }
+
+      .topbar {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .drinks {
+        grid-template-columns: 1fr;
+      }
+
+      .drink-button {
+        min-height: 220px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .shell {
+        padding: 16px;
+      }
+
+      .map {
+        grid-template-columns: 1fr;
+      }
+
+      .status-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+
+      .drink-name {
+        font-size: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <h1>智能自助调酒系统</h1>
+        <p class="subtitle">选择酒品后，系统自动匹配原料点位并下发机械臂执行序列。</p>
+      </div>
+      <div class="system-pill" aria-live="polite">
+        <span class="dot"></span>
+        <span>机械臂控制链路在线</span>
+      </div>
+    </header>
+
+    <section class="grid">
+      <div class="drinks" id="drinkGrid" aria-label="酒品选择"></div>
+
+      <aside class="side">
+        <section class="panel" aria-live="polite">
+          <h2>运行状态</h2>
+          <div class="status-list">
+            <div class="status-row">
+              <div class="label">当前酒品</div>
+              <div class="value" id="selectedDrink">未选择</div>
+            </div>
+            <div class="status-row">
+              <div class="label">原料编号</div>
+              <div class="value" id="selectedSequence">等待选择酒品</div>
+            </div>
+            <div class="status-row">
+              <div class="label">机械臂状态</div>
+              <div class="value">
+                <span class="state" id="armState"><span class="dot"></span>待机</span>
+                <div class="progress" aria-hidden="true">
+                  <div class="progress-fill" id="progressFill"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button class="run-button" id="runButton" disabled>开始调制</button>
+        </section>
+
+        <section class="panel">
+          <h2>固定点位</h2>
+          <div class="map" id="pointMap"></div>
+        </section>
+
+        <section class="panel">
+          <h2>执行提示</h2>
+          <p class="hint">先选择 1/2/3/4 号酒品，再点击开始调制。糖浆与冰块为辅助添加项，不进入机械臂编号抓取序列。</p>
+        </section>
+
+        <section class="panel">
+          <h2>指令日志</h2>
+          <div class="log" id="log">
+            <div class="log-line">等待用户选择酒品。</div>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const ingredientPoints = {
+      "01": "朗姆酒",
+      "02": "菠萝汁",
+      "03": "厚椰乳",
+      "04": "蓝橙力娇酒",
+      "05": "威士忌",
+      "06": "橙汁",
+      "07": "暴打柠檬拉格啤酒"
+    };
+
+    const drinks = [
+      {
+        id: 1,
+        name: "椰林飘香",
+        recipe: ["朗姆酒 40ml", "菠萝汁 60ml", "厚椰乳 40ml", "冰块", "加冰摇匀"],
+        sequence: ["01", "02", "03"],
+        auxiliary: ["冰块"]
+      },
+      {
+        id: 2,
+        name: "蓝色椰风",
+        recipe: ["蓝橙力娇酒 20ml", "厚椰乳 40ml", "菠萝汁 40ml", "冰块", "加冰摇匀"],
+        sequence: ["04", "03", "02"],
+        auxiliary: ["冰块"]
+      },
+      {
+        id: 3,
+        name: "桂花橙香",
+        recipe: ["威士忌 40ml", "橙汁 60ml", "桂花糖浆 10-15ml", "冰块", "搅拌即可"],
+        sequence: ["05", "06"],
+        auxiliary: ["桂花糖浆", "冰块"]
+      },
+      {
+        id: 4,
+        name: "柠檬暴击啤",
+        recipe: ["暴打柠檬拉格啤酒", "橙汁或菠萝汁 10-20ml", "直接混合"],
+        sequence: ["07", "06"],
+        auxiliary: ["可切换少量果汁点位 06/02"]
+      }
+    ];
+
+    const drinkGrid = document.querySelector("#drinkGrid");
+    const pointMap = document.querySelector("#pointMap");
+    const selectedDrink = document.querySelector("#selectedDrink");
+    const selectedSequence = document.querySelector("#selectedSequence");
+    const armState = document.querySelector("#armState");
+    const progressFill = document.querySelector("#progressFill");
+    const runButton = document.querySelector("#runButton");
+    const log = document.querySelector("#log");
+    const API_BASE = window.location.origin.startsWith("http")
+      ? window.location.origin
+      : "http://127.0.0.1:8765";
+
+    let activeDrink = null;
+    let isRunning = false;
+    let statusTimer = null;
+
+    function renderDrinks() {
+      drinkGrid.innerHTML = drinks.map((drink) => `
+        <button class="drink-button" data-id="${drink.id}" type="button">
+          <div class="drink-head">
+            <div>
+              <h2 class="drink-name">${drink.name}</h2>
+            </div>
+            <div class="drink-no">${drink.id}</div>
+          </div>
+          <p class="recipe">${drink.recipe.join("<br>")}</p>
+          <div class="sequence">
+            ${drink.sequence.map((point) => `<span class="tag">${point} ${ingredientPoints[point]}</span>`).join("")}
+          </div>
+        </button>
+      `).join("");
+    }
+
+    function renderPointMap() {
+      pointMap.innerHTML = Object.entries(ingredientPoints).map(([point, name]) => `
+        <div class="map-item">
+          <div class="point">${point}</div>
+          <div class="ingredient">${name}</div>
+        </div>
+      `).join("");
+    }
+
+    function setState(label, mode = "idle") {
+      armState.className = `state ${mode}`;
+      armState.innerHTML = `<span class="dot"></span>${label}`;
+    }
+
+    function writeLog(lines) {
+      log.innerHTML = lines.map((line) => `<div class="log-line">${line}</div>`).join("");
+    }
+
+    function selectDrink(drink) {
+      if (isRunning) return;
+      activeDrink = drink;
+      document.querySelectorAll(".drink-button").forEach((button) => {
+        button.classList.toggle("active", Number(button.dataset.id) === drink.id);
+      });
+
+      const sequenceText = drink.sequence.map((point) => `${point} ${ingredientPoints[point]}`).join(" -> ");
+      selectedDrink.textContent = `${drink.id}号 ${drink.name}`;
+      selectedSequence.textContent = sequenceText;
+      progressFill.style.width = "0%";
+      setState("待机");
+      runButton.disabled = false;
+      writeLog([
+        `已选择 ${drink.id}号 ${drink.name}。`,
+        `待执行点位：${sequenceText}。`,
+        `辅助项：${drink.auxiliary.join("、")}。`
+      ]);
+
+      dispatchRobotCommand("QUEUE_READY", drink);
+    }
+
+    function dispatchRobotCommand(type, drink, point = null) {
+      const payload = {
+        type,
+        cocktailId: drink.id,
+        cocktailName: drink.name,
+        sequence: drink.sequence,
+        point,
+        timestamp: new Date().toISOString()
+      };
+
+      window.dispatchEvent(new CustomEvent("robot-arm-command", { detail: payload }));
+      console.info("[robot-arm-command]", payload);
+      return payload;
+    }
+
+    async function runSequence() {
+      if (!activeDrink || isRunning) return;
+      isRunning = true;
+      runButton.disabled = true;
+      document.querySelectorAll(".drink-button").forEach((button) => button.disabled = true);
+
+      const payload = dispatchRobotCommand("START", activeDrink);
+      writeLog([`已发送 ${activeDrink.name} 指令到本地机械臂服务。`]);
+      setState("指令下发中", "running");
+
+      try {
+        const response = await fetch(`${API_BASE}/api/run`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok || !result.ok) {
+          throw new Error(result.error || "机械臂服务拒绝任务");
+        }
+        startStatusPolling();
+      } catch (error) {
+        isRunning = false;
+        runButton.disabled = false;
+        document.querySelectorAll(".drink-button").forEach((button) => button.disabled = false);
+        setState("连接失败", "running");
+        writeLog([
+          `无法连接本地机械臂服务：${error.message}`,
+          `请先运行 python robot_bridge.py，再从 http://127.0.0.1:8765/index.html 打开页面。`
+        ]);
+      }
+    }
+
+    function startStatusPolling() {
+      window.clearInterval(statusTimer);
+      statusTimer = window.setInterval(refreshStatus, 500);
+      refreshStatus();
+    }
+
+    async function refreshStatus() {
+      try {
+        const response = await fetch(`${API_BASE}/api/status`);
+        const status = await response.json();
+        const mode = status.state === "done" ? "done" : status.busy ? "running" : "idle";
+        const pointText = status.currentPoint ? `｜点位 ${status.currentPoint}` : "";
+        setState(`${status.message || status.state}${pointText}`, mode);
+        progressFill.style.width = `${Number(status.progress || 0)}%`;
+        if (Array.isArray(status.logs) && status.logs.length > 0) {
+          writeLog(status.logs.slice(0, 6));
+        }
+
+        if (!status.busy && isRunning) {
+          isRunning = false;
+          runButton.disabled = false;
+          document.querySelectorAll(".drink-button").forEach((button) => button.disabled = false);
+          window.clearInterval(statusTimer);
+        }
+      } catch (error) {
+        window.clearInterval(statusTimer);
+        isRunning = false;
+        runButton.disabled = false;
+        document.querySelectorAll(".drink-button").forEach((button) => button.disabled = false);
+        setState("服务离线", "running");
+        writeLog([`状态读取失败：${error.message}`]);
+      }
+    }
+
+    renderDrinks();
+    renderPointMap();
+
+    drinkGrid.addEventListener("click", (event) => {
+      const button = event.target.closest(".drink-button");
+      if (!button) return;
+      const drink = drinks.find((item) => item.id === Number(button.dataset.id));
+      selectDrink(drink);
+    });
+
+    runButton.addEventListener("click", runSequence);
+  </script>
+</body>
+</html>
