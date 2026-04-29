@@ -1,11 +1,11 @@
 {
     "dry_run":  false,
-    "sdk_scripts_path":  "/home/yan/moce/Panthera-HT_SDK/panthera_python/scripts",
-    "robot_config_path":  "/home/yan/moce/Panthera-HT_SDK/panthera_python/robot_param/Follower.yaml",
+    "sdk_scripts_path":  "/home/yuan/code/Panthera-HT_SDK/panthera_python/scripts",
+    "robot_config_path":  "/home/yuan/code/Panthera-HT_SDK/panthera_python/robot_param/Follower.yaml",
     "motion":  {
                    "duration":  5,
                    "grip_wait_seconds":  1.0,
-                   "return_wait_seconds":  0.8,
+                   "return_wait_seconds":  15.8,
                    "max_torque":  [
                                       21.0,
                                       36.0,
@@ -55,8 +55,8 @@
                                            0.0
                                        ],
                               "trajectories":  {
-                                                   "to_mix":  "trajectories/01/whole_from_origin_to_1_to_mix.jsonl",
-                                                   "return":  "trajectories/01/whole_from_mix_to_1_to_origin_reversed.jsonl"
+                                                   "to_mix":  "trajectories/01/whole_from_origin1.jsonl",
+                                                   "return":  "trajectories/01/whole_to_origin_from_1_reversed.jsonl"
                                                }
                           },
                    "02":  {
@@ -78,8 +78,8 @@
                                            0.0
                                        ],
                               "trajectories":  {
-                                                   "to_mix":  "trajectories/02/whole_from_origin_to_2_to_mix.jsonl",
-                                                   "return":  "trajectories/02/whole_from_mix_to_2_to_origin_reversed.jsonl"
+                                                   "to_mix":  "trajectories/02/whole_from_origin2.jsonl",
+                                                   "return":  "trajectories/02/whole_to_origin_from_2_reversed.jsonl"
                                                }
                           },
                    "03":  {
@@ -101,8 +101,8 @@
                                            0.0
                                        ],
                               "trajectories":  {
-                                                   "to_mix":  "trajectories/03/whole_from_origin_to_3_to_mix.jsonl",
-                                                   "return":  "trajectories/03/whole_from_mix_to_3_to_origin_reversed.jsonl"
+                                                   "to_mix":  "trajectories/03/whole_from_origin3.jsonl",
+                                                   "return":  "trajectories/03/whole_to_origin_from_3_reversed.jsonl"
                                                }
                           },
                    "04":  {
@@ -124,8 +124,8 @@
                                            0.0
                                        ],
                               "trajectories":  {
-                                                   "to_mix":  "trajectories/04/whole_from_origin_to_4_to_mix.jsonl",
-                                                   "return":  "trajectories/04/whole_from_mix_to_4_to_origin_reversed.jsonl"
+                                                   "to_mix":  "trajectories/04/whole_from_origin4.jsonl",
+                                                   "return":  "trajectories/04/whole_to_origin_from_4_reversed.jsonl"
                                                }
                           },
                    "05":  {
@@ -147,8 +147,8 @@
                                            0.0
                                        ],
                               "trajectories":  {
-                                                   "to_mix":  "trajectories/05/whole_from_origin_to_5_to_mix.jsonl",
-                                                   "return":  "trajectories/05/whole_from_mix_to_5_to_origin_reversed.jsonl"
+                                                   "to_mix":  "trajectories/05/whole_from_origin5.jsonl",
+                                                   "return":  "trajectories/05/whole_to_origin_from_5_reversed.jsonl"
                                                }
                           },
                    "06":  {
@@ -170,8 +170,8 @@
                                            0.0522
                                        ],
                               "trajectories":  {
-                                                   "to_mix":  "trajectories/06/whole_from_origin_to_6_to_mix.jsonl",
-                                                   "return":  "trajectories/06/whole_from_mix_to_6_to_origin_reversed.jsonl"
+                                                   "to_mix":  "trajectories/06/whole_from_origin6.jsonl",
+                                                   "return":  "trajectories/06/whole_to_origin_from_6_reversed.jsonl"
                                                }
                           },
                    "07":  {
@@ -193,8 +193,8 @@
                                            0.0522
                                        ],
                               "trajectories":  {
-                                                   "to_mix":  "trajectories/07/whole_from_origin_to_7_to_mix.jsonl",
-                                                   "return":  "trajectories/07/whole_from_mix_to_7_to_origin_reversed.jsonl"
+                                                   "to_mix":  "trajectories/07/whole_from_origin7.jsonl",
+                                                   "return":  "trajectories/07/whole_to_origin_from_7_reversed.jsonl"
                                                }
                           }
                },
@@ -205,6 +205,9 @@
                                                       "to_mix",
                                                       "return"
                                                   ],
+                                "delay_after_segments_seconds":  {
+                                                                     "to_mix":  10
+                                                                 },
                                 "kp":  [
                                            30,
                                            40,

@@ -230,6 +230,7 @@ class PantheraRunner:
                 message=f"播放点位 {point_id} {point['name']} 轨迹: {segment}",
             )
             self._play_trajectory(point_id, point, segment)
+            self._sleep_after_trajectory_segment(point_id, point, segment)
 
         update_status(
             currentSegment=None,
@@ -290,6 +291,16 @@ class PantheraRunner:
         completed_segments = segment_index - 1
         progress = (completed_points + completed_segments / segment_total) / point_total * 100
         return min(int(progress), 99)
+
+    def _sleep_after_trajectory_segment(self, point_id, point, segment):
+        playback = self.config.get("trajectory_playback", {})
+        delays = playback.get("delay_after_segments_seconds", {})
+        seconds = float(delays.get(segment, 0.0))
+        if seconds <= 0:
+            return
+
+        update_status(message=f"点位 {point_id} {point['name']} 轨迹 {segment} 完成，等待 {seconds:g} 秒")
+        time.sleep(seconds if not self.dry_run else min(seconds, 0.3))
 
     def _play_trajectory(self, point_id, point, segment):
         filepath = point["trajectories"][segment]
@@ -439,7 +450,7 @@ class Handler(SimpleHTTPRequestHandler):
 
 def main():
     parser = argparse.ArgumentParser(description="Robot bar Panthera-HT bridge")
-    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
 

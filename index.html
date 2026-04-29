@@ -282,6 +282,11 @@
       min-height: 640px;
       display: grid;
       place-items: center;
+      border-radius: 42px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 16%, rgba(200, 156, 91, .1), transparent 28%),
+        radial-gradient(circle at 50% 76%, rgba(0, 0, 0, .28), transparent 48%);
     }
 
     .drink-theatre::before {
@@ -305,15 +310,96 @@
       filter: blur(12px);
     }
 
+    .mystery-stage {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      opacity: 0;
+      transform: scale(.98);
+      transition: opacity .35s ease, transform .35s ease;
+      pointer-events: none;
+    }
+
+    .drink-theatre.is-mystery .mystery-stage {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .mystery-orbit {
+      position: absolute;
+      inset: 0;
+    }
+
+    .mystery-center-image {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 1;
+      width: min(96vw, 760px);
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+      transform: translate(-50%, -50%);
+      filter: drop-shadow(0 28px 34px rgba(0, 0, 0, .52));
+      animation: mysteryCenterFloat 7.4s ease-in-out infinite;
+    }
+
+    .mystery-token {
+      position: absolute;
+      margin: 0;
+      left: var(--x);
+      top: var(--y);
+      width: var(--size);
+      display: grid;
+      justify-items: center;
+      gap: 0;
+      transform: translate(-50%, -50%) rotate(var(--tilt));
+      animation: mysteryFloat var(--duration) ease-in-out infinite;
+      animation-delay: var(--delay);
+      filter: drop-shadow(0 18px 24px rgba(0, 0, 0, .44));
+      opacity: .92;
+    }
+
+    .mystery-token.is-spotlight {
+      z-index: 2;
+      opacity: 1;
+      filter: drop-shadow(0 26px 34px rgba(0, 0, 0, .54));
+    }
+
+    .mystery-token::before {
+      content: "";
+      position: absolute;
+      inset: auto 16% 2% 16%;
+      height: 16px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, .34);
+      filter: blur(9px);
+      z-index: -1;
+    }
+
+    .mystery-token img {
+      width: 100%;
+      height: auto;
+      max-height: 196px;
+      object-fit: contain;
+      transform: scale(var(--token-scale, 1));
+    }
+
     .featured-drink {
       position: relative;
-      z-index: 1;
+      z-index: 3;
       width: min(96%, 680px);
       max-height: 660px;
       object-fit: contain;
       filter: drop-shadow(0 40px 42px rgba(0, 0, 0, .58));
       transform: translateY(2px) scale(var(--feature-scale, 1));
       transition: opacity .22s ease, transform .22s ease, filter .22s ease;
+    }
+
+    .drink-theatre.is-mystery .featured-drink {
+      opacity: 0;
+      transform: translateY(12px) scale(.94);
+      pointer-events: none;
     }
 
     .featured-drink.swap {
@@ -333,6 +419,37 @@
       letter-spacing: .18em;
       text-transform: uppercase;
       writing-mode: vertical-rl;
+      text-shadow: 0 10px 24px rgba(0, 0, 0, .3);
+    }
+
+    .drink-theatre.is-mystery {
+      background: transparent;
+    }
+
+    .drink-theatre.is-mystery::before,
+    .drink-theatre.is-mystery::after,
+    .drink-theatre.is-mystery .drink-caption {
+      opacity: 0;
+    }
+
+    @keyframes mysteryFloat {
+      0%, 100% {
+        transform: translate(-50%, -50%) translate3d(0, 0, 0) rotate(var(--tilt)) scale(1);
+      }
+
+      50% {
+        transform: translate(-50%, -50%) translate3d(0, -16px, 0) rotate(calc(var(--tilt) + 3deg)) scale(1.04);
+      }
+    }
+
+    @keyframes mysteryCenterFloat {
+      0%, 100% {
+        transform: translate(-50%, -50%) translate3d(0, 0, 0) scale(1);
+      }
+
+      50% {
+        transform: translate(-50%, -50%) translate3d(0, -10px, 0) scale(1.03);
+      }
     }
 
     .control-drawer {
@@ -709,6 +826,15 @@
         max-height: 460px;
       }
 
+      .mystery-token {
+        width: calc(var(--size) * .84);
+      }
+
+      .mystery-center-image {
+        width: min(90vw, 620px);
+        max-width: 96%;
+      }
+
       .drink-menu {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
@@ -763,6 +889,15 @@
       .point-map {
         grid-template-columns: 1fr;
       }
+
+      .mystery-token {
+        width: calc(var(--size) * .68);
+      }
+
+      .mystery-center-image {
+        width: min(88vw, 420px);
+        max-width: 92%;
+      }
     }
   </style>
 </head>
@@ -816,6 +951,10 @@
       </section>
 
       <section class="drink-theatre" aria-live="polite">
+        <div class="mystery-stage" id="mysteryStage" aria-hidden="true">
+          <div class="mystery-orbit" id="mysteryOrbit"></div>
+          <img class="mystery-center-image" src="pic/mysterious.png" alt="MomoTender">
+        </div>
         <div class="drink-caption" id="drinkCaption">Luau Coconut</div>
         <img class="featured-drink" id="featuredImage" src="pic/coconut.png" alt="椰林飘香">
       </section>
@@ -826,7 +965,7 @@
             <p class="drawer-kicker">Live Control</p>
             <h2 class="drawer-title">Momo Bartender</h2>
           </div>
-          <button class="run-button" id="runButton" disabled>开始调制</button>
+          <button class="run-button" id="runButton" disabled>确认点单</button>
         </div>
 
         <div class="status-list">
@@ -957,6 +1096,8 @@
     const featureSub = document.querySelector("#featureSub");
     const featuredImage = document.querySelector("#featuredImage");
     const drinkCaption = document.querySelector("#drinkCaption");
+    const mysteryOrbit = document.querySelector("#mysteryOrbit");
+    const drinkTheatre = document.querySelector(".drink-theatre");
     const API_BASE = window.location.origin.startsWith("http")
       ? window.location.origin
       : "http://127.0.0.1:8765";
@@ -965,6 +1106,29 @@
     let isRunning = false;
     let statusTimer = null;
     let momotenderRequest = null;
+
+    const mysteryLayout = [
+      { x: 15, y: 24, size: 130, tilt: -10, duration: 8.4, delay: -1.2, spotlight: true },
+      { x: 49, y: 16, size: 98, tilt: -4, duration: 7.8, delay: -2.3 },
+      { x: 82, y: 24, size: 122, tilt: 10, duration: 9.2, delay: -2.8 },
+      { x: 86, y: 54, size: 104, tilt: 6, duration: 8.6, delay: -3.4 },
+      { x: 73, y: 80, size: 132, tilt: 8, duration: 8.9, delay: -3.2, spotlight: true },
+      { x: 30, y: 82, size: 120, tilt: -8, duration: 8.1, delay: -4.4 },
+      { x: 11, y: 58, size: 100, tilt: -12, duration: 8.8, delay: -4.9 }
+    ];
+
+    const mysteryCandidates = [
+      { image: "pic/coconut.png", name: "椰林飘香" },
+      { image: "pic/lemon-removebg-preview.png", name: "柠檬变体" },
+      { image: "pic/blue.png", name: "蓝色椰风" },
+      { image: "pic/orange-removebg-preview.png", name: "橙香变体" },
+      { image: "pic/orange.png", name: "桂花橙香" },
+      { image: "pic/lemon.png", name: "柠檬暴击啤" },
+      { image: "pic/luau-coconut-removebg-preview.png", name: "椰香变体" }
+    ].map((asset, index) => ({
+      ...mysteryLayout[index],
+      ...asset
+    }));
 
     function displayNumber(drink) {
       return drink.displayNo || String(drink.id).padStart(2, "0");
@@ -1009,11 +1173,55 @@
       updateDrinkActiveState();
     }
 
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function randomOffset(range) {
+      return (Math.random() * range * 2) - range;
+    }
+
+    function renderMysteryOrbit() {
+      const cards = mysteryCandidates
+        .map((asset) => {
+          const x = clamp(asset.x + randomOffset(4), 12, 88);
+          const y = clamp(asset.y + randomOffset(5), 14, 86);
+          const size = Math.round(asset.size * (0.92 + Math.random() * 0.18));
+          const tilt = `${asset.tilt + randomOffset(4)}deg`;
+          const duration = `${asset.duration + randomOffset(0.8)}s`;
+          const delay = `${asset.delay + randomOffset(0.9)}s`;
+          const tokenScale = (0.96 + Math.random() * 0.12).toFixed(3);
+          return `
+            <figure
+              class="mystery-token${asset.spotlight ? " is-spotlight" : ""}"
+              style="
+                --x: ${x}%;
+                --y: ${y}%;
+                --size: ${size}px;
+                --tilt: ${tilt};
+                --duration: ${duration};
+                --delay: ${delay};
+                --token-scale: ${tokenScale};
+              "
+            >
+              <img src="${asset.image}" alt="${asset.name}">
+            </figure>
+          `;
+        })
+        .sort(() => Math.random() - 0.5);
+
+      mysteryOrbit.innerHTML = cards.join("");
+    }
+
     function setFeaturedDrink(drink) {
       featureNumber.textContent = displayNumber(drink);
       featureName.textContent = drink.name;
       featureSub.textContent = drink.profile;
-      drinkCaption.textContent = drink.english;
+      drinkCaption.textContent = drink.dynamic ? "" : drink.english;
+      drinkTheatre.classList.toggle("is-mystery", Boolean(drink.dynamic));
+      if (drink.dynamic) {
+        renderMysteryOrbit();
+      }
       featuredImage.style.setProperty("--feature-scale", drink.featureScale || 1);
       featuredImage.classList.add("swap");
       window.setTimeout(() => {
